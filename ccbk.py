@@ -321,8 +321,7 @@ def kbdArrows(key, value,event):#, isUseCtrlAsSpeed=False):
     if 39 in pressedKeys or e.KEY_S in pressedKeys:
         #isDoublePress=True
     #if isDoublePress:
-        ui.write(e.EV_KEY, key, 0)            
-        print('ogogo')
+        ui.write(e.EV_KEY, key, 0)        
         ui.write(e.EV_KEY, key, value)            
     if isCtrl:        
         ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 0)
@@ -347,8 +346,7 @@ with evdev.UInput.from_device(device) as ui:
                     ifGrabbed=True
                     device.set_led(evdev.ecodes.LED_CAPSL, 1)
                     continue
-            if (event.code, event.value)==(e.KEY_SCROLLLOCK,2):
-                print('lfj')
+            if (event.code, event.value)==(e.KEY_SCROLLLOCK,2):                
                 break
             if (event.code, event.value)==(58,1):
                 ifGrabbed=False                
@@ -377,8 +375,7 @@ with evdev.UInput.from_device(device) as ui:
                     if earlyPressedKeys[event.code]==1:
                         ui.write_event(event)
                         ui.syn()
-                        earlyPressedKeys[event.code]=0
-                        print('hell')
+                        earlyPressedKeys[event.code]=0                        
                 except Exception as err:
                     pass                     
     
