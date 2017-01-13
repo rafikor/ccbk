@@ -347,6 +347,8 @@ with evdev.UInput.from_device(device) as ui:
                     device.set_led(evdev.ecodes.LED_CAPSL, 1)
                     continue
             if (event.code, event.value)==(e.KEY_SCROLLLOCK,2):                
+                for thrd in dictThreadsMouseMove.values():
+                    thrd[0].stop()
                 break
             if (event.code, event.value)==(58,1):
                 ifGrabbed=False                
