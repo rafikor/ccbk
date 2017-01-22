@@ -65,8 +65,12 @@ device.leds(verbose=True)
 mouse=None
 for file in range(len(files)):
     if files[file].find('mouse')>=0:
-        mouse = evdev.InputDevice(baseDir+'/'+files[file])
-        break
+        try:
+            mouse = evdev.InputDevice(baseDir+'/'+files[file])
+        except IOError as e:
+            pass
+        else:
+            break
 #mouse = evdev.InputDevice('/dev/input/by-path/pci-0000:00:14.0-usb-0:6:1.0-event-mouse')
         
 #'/dev/input/by-path/pci-0000:00:14.0-usb-0:6:1.0-event-mouse')
