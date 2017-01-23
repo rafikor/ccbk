@@ -142,6 +142,7 @@ class StoppableThread(threading.Thread):
 uimouse=evdev.UInput.from_device(mouse)
 
 dictThreadsMouseMove={}
+dictThreadsArrowsMove={}
 threadMouseWheel=None
 
 timeToSpeedUp=0.
@@ -230,7 +231,7 @@ def threadMouseMove(xy=e.REL_X,sgn=1):
         elif not (39 in pressedKeys):
             if (e.KEY_S in pressedKeys):
                 #print("f")
-                uimouse.write(e.EV_REL, xy, 2*sgn)
+                uimouse.write(e.EV_REL, xy, 1*sgn)
             else:
                 uimouse.write(e.EV_REL, xy, 20*sgn)
         else:
@@ -309,8 +310,33 @@ def mouseWheelMove(sgn=1,value=1):
         threadMouseWheel.start()
     elif value==0:
         threadMouseWheel.stop()  
-    
-    
+
+def mouseArrowsMoveThreadfunc(key):
+    while True:        
+        if (not 39 in pressedKeys):
+            return        
+        ui.write(e.EV_KEY , key, 1)        
+        ui.write(e.EV_KEY , key, 0)
+        ui.syn()
+        time.sleep(0.03)
+        if dictThreadsArrowsMove[key][0].stopped():        
+            return        
+            
+def mouseArrowsMoveThreadsControlfunc(key,value,event):    
+    if (not 39 in pressedKeys):
+        kbdArrows(key, value,event)
+        print('ololo')
+    else:
+        print('ololo2')
+        if value==1:
+            dictThreadsArrowsMove[key]=[StoppableThread(mouseArrowsMoveThreadfunc, (key,)),0,]
+            dictThreadsArrowsMove[key][0].start()            
+        elif value==0:
+            try:
+                dictThreadsArrowsMove[key][0].stop()
+            except Exception as e:
+                pass
+ 
 def kbdArrows(key, value,event):#, isUseCtrlAsSpeed=False):
     isCtrl=False
     if (e.KEY_A in pressedKeys):
@@ -353,6 +379,8 @@ with evdev.UInput.from_device(device) as ui:
             if (event.code, event.value)==(e.KEY_SCROLLLOCK,2):                
                 for thrd in dictThreadsMouseMove.values():
                     thrd[0].stop()
+                for thrd in dictThreadsArrowsMove.values():
+                    thrd[0].stop()
                 break
             if (event.code, event.value)==(58,1):
                 ifGrabbed=False                
@@ -385,14 +413,14 @@ with evdev.UInput.from_device(device) as ui:
                 except Exception as err:
                     pass                     
     
-                if event.code==e.KEY_R:                
-                    kbdArrows(e.KEY_RIGHT, event.value,event)                
-                elif event.code==e.KEY_E:                
-                    kbdArrows(e.KEY_LEFT, event.value,event)
-                elif event.code==e.KEY_O:                
-                    kbdArrows(e.KEY_UP, event.value,event)
-                elif event.code==e.KEY_K:                
-                    kbdArrows(e.KEY_DOWN, event.value,event)                                
+                if event.code==e.KEY_R:
+                    mouseArrowsMoveThreadsControlfunc(e.KEY_RIGHT,event.value,event)                        
+                elif event.code==e.KEY_E:
+                    mouseArrowsMoveThreadsControlfunc(e.KEY_LEFT,event.value,event)
+                elif event.code==e.KEY_O:
+                    mouseArrowsMoveThreadsControlfunc(e.KEY_UP,event.value,event)
+                elif event.code==e.KEY_K:
+                    mouseArrowsMoveThreadsControlfunc(e.KEY_DOWN,event.value,event)
                 elif event.code==e.KEY_T:                
                     kbdArrows(e.KEY_HOME, event.value,event)
                 elif event.code==e.KEY_G:                
