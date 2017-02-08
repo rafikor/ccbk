@@ -290,10 +290,13 @@ def mouseWheelMoveThreadfunc(sgn=1):
             isCtrl=True    
         if isCtrl:
             ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
+            ui.syn()
+            time.sleep(0.02)
         if not (39 in pressedKeys or e.KEY_S in pressedKeys ):
             uimouse.write(e.EV_REL , 8, sgn)#e.BTN_WHEEL
         else:
             uimouse.write(e.EV_REL , 8, sgn*3)
+        uimouse.syn()
         if isCtrl:
             ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 0)
             ui.syn()
@@ -325,9 +328,9 @@ def mouseArrowsMoveThreadfunc(key):
 def mouseArrowsMoveThreadsControlfunc(key,value,event):    
     if (not 39 in pressedKeys):
         kbdArrows(key, value,event)
-        print('ololo')
+        #print('ololo')
     else:
-        print('ololo2')
+        #print('ololo2')
         if value==1:
             dictThreadsArrowsMove[key]=[StoppableThread(mouseArrowsMoveThreadfunc, (key,)),0,]
             dictThreadsArrowsMove[key][0].start()            
