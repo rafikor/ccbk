@@ -2,13 +2,17 @@
 """
 Created on Tue Dec  6 00:14:00 2016
 
-@author: baradaty-admin
+@author: raforl
 """
 
 import evdev
 import time
 import threading
 import multiprocessing
+
+import evdev.ecodes as e
+
+from ccbk_config import *
 
 devind=-1
 def waitInput(device,index,queue):
@@ -18,7 +22,7 @@ def waitInput(device,index,queue):
         return
         
 import os
-baseDir='/dev/input/by-path'
+baseDir='/dev/input/by-path'  #where to search devices
 files=os.listdir(baseDir)
 keyboadsDevs=[]
 keyboadsInputs=[]
@@ -37,7 +41,7 @@ if kbds!=1:
             keyboadsDevs[-1].grab()
             keyboadsThreads.append(multiprocessing.Process(target=waitInput,args=(keyboadsDevs[-1],len(keyboadsDevs)-1,queue) ))
             keyboadsThreads[-1].start()
-    print('press key on a keyboard to grub it')
+    print('press key on a keyboard to grab it')
     devind=queue.get()
     for ind in range(len(keyboadsDevs)):
         keyboadsThreads[ind].terminate()
@@ -50,17 +54,10 @@ else:
             device=evdev.InputDevice(baseDir+'/'+files[file])
             break
 
-#device = evdev.InputDevice('/dev/input/by-id/usb-Logitech_USB_Receiver-if02-event-kbd')
-#/dev/input/by-path/platform-i8042-serio-0-event-kbd')
-#
-#'/dev/input/by-id/usb-Generic_USB_Keyboard-event-kbd')
-#device = evdev.InputDevice('/dev/input/by-path/platform-i8042-serio-0-event-kbd')
 print('Used keyboard:')
 print(device)
 device.capabilities()
 device.leds(verbose=True)
-#device.set_led(evdev.ecodes.LED_CAPSL, 1)  # enable numlock
-
 
 mouse=None
 for file in range(len(files)):
@@ -71,58 +68,44 @@ for file in range(len(files)):
             pass
         else:
             break
-#mouse = evdev.InputDevice('/dev/input/by-path/pci-0000:00:14.0-usb-0:6:1.0-event-mouse')
-        
-#'/dev/input/by-path/pci-0000:00:14.0-usb-0:6:1.0-event-mouse')
-#mouse = evdev.InputDevice('/dev/input/event13')
-#'/dev/input/by-path/pci-0000:00:14.0-usb-0:2:1.0-event-mouse')#'/dev/input/by-path/pci-0000:00:14.0-usb-0:6:1.0-event-mouse')
+
 print('Used mouse:')
 print(mouse )
-#device=mouse
 
 from evdev import InputDevice
 from select import select
-import evdev.ecodes as e
 
-# A mapping of file descriptors (integers) to InputDevice instances.
-devices = [mouse]#[device]#map(InputDevice, ('/dev/input/event1', '/dev/input/event2'))
-devices = {dev.fd: dev for dev in devices}
-
-#for dev in devices.values(): print(dev)
 
 from evdev import UInput, AbsInfo
 
-cap = {
-    #e.EV_KEY : [e.KEY_A, e.KEY_B],
-     e.EV_REL: [
-       (e.REL_X, AbsInfo(value=0, min=-255, max=255,
-                           fuzz=0, flat=0, resolution=0)),
-         (e.REL_Y, AbsInfo(0, -255, 255, 0, 0, 0)),
-         (e.ABS_MT_POSITION_X, (0, 255, 128, 0)) ]
-}
+###############################
+#capabilities to 'create virtual mouse'
+#cap = {    
+#     e.EV_REL: [
+#       (e.REL_X, AbsInfo(value=0, min=-255, max=255,
+#                           fuzz=0, flat=0, resolution=0)),
+#         (e.REL_Y, AbsInfo(0, -255, 255, 0, 0, 0)),
+#         (e.ABS_MT_POSITION_X, (0, 255, 128, 0)) ]
+#}
 
-cap2 = {
-     e.EV_KEY : [e.KEY_A, e.KEY_B],
-     e.EV_ABS : [
-         (e.ABS_X, AbsInfo(value=0, min=0, max=255,
-                           fuzz=0, flat=0, resolution=0)),
-         (e.ABS_Y, AbsInfo(0, 0, 255, 0, 0, 0)),
-         (e.ABS_MT_POSITION_X, (0, 255, 128, 0)) ]    
- }
+#cap2 = {
+#     e.EV_KEY : [e.KEY_A, e.KEY_B],
+#     e.EV_ABS : [
+#         (e.ABS_X, AbsInfo(value=0, min=0, max=255,
+#                           fuzz=0, flat=0, resolution=0)),
+#         (e.ABS_Y, AbsInfo(0, 0, 255, 0, 0, 0)),
+#         (e.ABS_MT_POSITION_X, (0, 255, 128, 0)) ]    
+# }
 
 #uimouse = UInput(cap2, name='example-device', version=0x3)
 # move mouse cursor
 #ui.write(e.EV_ABS, e.ABS_X, 20)
 #ui.write(e.EV_ABS, e.ABS_Y, 20)
 #ui.syn()
-
+###############################
 
 #from http://stackoverflow.com/questions/3503879/assign-output-of-os-system-to-a-variable-and-prevent-it-from-being-displayed-on
 import subprocess
-#proc = subprocess.Popen(["cat", "/etc/services"], stdout=subprocess.PIPE, shell=True)
-#(out, err) = proc.communicate()
-#print "program output:", out
-
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -145,77 +128,17 @@ dictThreadsMouseMove={}
 dictThreadsArrowsMove={}
 threadMouseWheel=None
 
-timeToSpeedUp=0.
-MouseMaxSpeed=0
-MouseMaxSpeedFast=0
-MouseMaxSpeedSlow=0
-MouseMaxSpeedUsual=0
-
-MouseSpeed=0.1
-MouseSpeedFast=0.2
-MouseSpeedFastFast=0.03
-MouseAccelerationSpeed=200
-MouseAccelerationCycles=20
-MouseAccelerationCyclesOld=MouseAccelerationCycles
-MouseAccelerationTimerInterval=15#10
-MouseMaxSpeed=30
-MouseMaxSpeedUsual=20
-MouseMaxSpeedFast=20
-MouseMaxSpeedSlow=5
-
-MouseWheelSpeed=1
-MouseWheelSpeedFast=2
-MouseWheelAccelerationSpeed=1 #in pixels/MouseAccelerationCycles
-MouseWheelAccelerationCycles=50 #interval of timer executions to increase speed by the variable above
-MouseWheelAccelerationTimerInterval=35 #in milliseconds (this ends up to being approximate depending on computer performance)
-MouseWheelMaxSpeed=5
-MouseWheelRotationAngle=0
-
-
-tKUp=e.KEY_O
-tKDown=e.KEY_K
-tKLeft=e.KEY_E
-tKRight=e.KEY_R
-
-tMUp=e.KEY_I
-tMDown=e.KEY_J
-tMLeft=e.KEY_D
-tMRight=e.KEY_F
-
-tKCtrl=e.KEY_A
-tKSlow=e.KEY_S
-tKCtrlMouse=e.KEY_V
-tKSpeed=39
-
-tMLclk=e.KEY_L
-tMRclk=e.KEY_M
-tMMclk=e.KEY_Q
-tMDLclk=e.KEY_W
-
-tMWhlUp=e.KEY_U
-tMWhlDown=e.KEY_H
-
-tKhome=e.KEY_T
-tKend=e.KEY_G
-tKpgUp=e.KEY_X
-tKpgDown=e.KEY_C
-tAppsKey=e.KEY_B
-tMWhlLeft=e.KEY_Y
-tMWhlRight=e.KEY_P
-
 currentMouseSpeed=0
 currentMouseSpeed_X=0
 currentMouseSpeed_Y=0
-
-
 
 def threadMouseMove(xy=e.REL_X,sgn=1):
     global currentMouseSpeed_X
     global currentMouseSpeed_Y
     while True:
-        if (not e.KEY_A in pressedKeys):
-            if not (39 in pressedKeys):
-                if (e.KEY_S in pressedKeys):
+        if (not tKCtrl in pressedKeys):
+            if not (tKSpeed in pressedKeys):
+                if (tKSlow in pressedKeys):
                     uimouse.write(e.EV_REL, xy, 4*sgn)
                 else:
                     if xy!=e.REL_X:
@@ -228,9 +151,8 @@ def threadMouseMove(xy=e.REL_X,sgn=1):
             else:
                 uimouse.write(e.EV_REL, xy, 50*sgn)
         
-        elif not (39 in pressedKeys):
-            if (e.KEY_S in pressedKeys):
-                #print("f")
+        elif not (tKSpeed in pressedKeys):
+            if (tKSlow in pressedKeys):                
                 uimouse.write(e.EV_REL, xy, 1*sgn)
             else:
                 uimouse.write(e.EV_REL, xy, 20*sgn)
@@ -248,36 +170,7 @@ def threadMouseMove(xy=e.REL_X,sgn=1):
 
 def mouseMove(xy=e.REL_X,sgn=1,value=1):#sgn=1 or -1    
     key=(xy,sgn)
-    if value==1:# or value==2:        
-                            #[thread,    current speed,  MouseSpeed,    maxSpeed,   acceleration interval, acceleration speed]
-#==============================================================================
-#         MouseMaxSpeed:=MouseMaxSpeedUsual ;MouseMaxSpeedSlow
-#         
-#         MovementButtonStateCtrl = True
-#         GetKeyState, MovementButtonState, %tKSpeed%, P
-#         if (MovementButtonStateCtrl="D" )
-#         {
-#             if (MovementButtonState="U" )
-#             {
-#             ;MouseMaxSpeed:=MouseMaxSpeedSlow*2
-#             MouseAccelerationCycles:=MouseAccelerationCycles*1.15
-#             }
-#         }
-#         GetKeyState, MovementButtonState, %tKSlow%, P
-#         if (MovementButtonState="D" )
-#             {
-#             MouseMaxSpeed:=MouseMaxSpeedSlow
-#             MouseAccelerationCycles:=MouseAccelerationCycles*1.5
-#             ;;MouseAccelerationCycles:=MouseAccelerationCyclesOld
-#             }
-#==============================================================================
-
-        #if (e.KEY_A in pressedKeys):
-        #    uimouse.write(e.EV_REL, xy, 10*sgn)
-        #elif not (39 in pressedKeys):
-        #    uimouse.write(e.EV_REL, xy, 20*sgn)
-        #else:
-        #    uimouse.write(e.EV_REL, xy, 50*sgn)    
+    if value==1:
         dictThreadsMouseMove[key]=[StoppableThread(threadMouseMove, (xy,sgn)),0,]
         dictThreadsMouseMove[key][0].start()
     elif value==0:
@@ -286,13 +179,13 @@ def mouseMove(xy=e.REL_X,sgn=1,value=1):#sgn=1 or -1
 def mouseWheelMoveThreadfunc(sgn=1):
     while True:
         isCtrl=False    
-        if (e.KEY_A in pressedKeys):
+        if (tKSlow in pressedKeys):
             isCtrl=True    
         if isCtrl:
             ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
             ui.syn()
             time.sleep(0.02)
-        if not (39 in pressedKeys or e.KEY_S in pressedKeys ):
+        if not (tKSpeed in pressedKeys or tKCtrl in pressedKeys ):
             uimouse.write(e.EV_REL , 8, sgn)#e.BTN_WHEEL
         else:
             uimouse.write(e.EV_REL , 8, sgn*3)
@@ -316,7 +209,7 @@ def mouseWheelMove(sgn=1,value=1):
 
 def mouseArrowsMoveThreadfunc(key):
     while True:        
-        if (not 39 in pressedKeys):
+        if (not tKSpeed in pressedKeys):
             return        
         ui.write(e.EV_KEY , key, 1)        
         ui.write(e.EV_KEY , key, 0)
@@ -326,11 +219,9 @@ def mouseArrowsMoveThreadfunc(key):
             return        
             
 def mouseArrowsMoveThreadsControlfunc(key,value,event):    
-    if (not 39 in pressedKeys):
-        kbdArrows(key, value,event)
-        #print('ololo')
-    else:
-        #print('ololo2')
+    if (not tKSpeed in pressedKeys):
+        kbdArrows(key, value,event)        
+    else:        
         if value==1:
             dictThreadsArrowsMove[key]=[StoppableThread(mouseArrowsMoveThreadfunc, (key,)),0,]
             dictThreadsArrowsMove[key][0].start()            
@@ -342,18 +233,13 @@ def mouseArrowsMoveThreadsControlfunc(key,value,event):
  
 def kbdArrows(key, value,event):#, isUseCtrlAsSpeed=False):
     isCtrl=False
-    if (e.KEY_A in pressedKeys):
+    if (tKCtrl in pressedKeys):
         isCtrl=True
     if isCtrl:
         ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
         ui.syn()    
-    ui.write(e.EV_KEY, key, value)  # KEY_A down                
-    #isDoublePress=False
-    #if 39 in pressedKeys:
-        #isDoublePress=True
-    if 39 in pressedKeys or e.KEY_S in pressedKeys:
-        #isDoublePress=True
-    #if isDoublePress:
+    ui.write(e.EV_KEY, key, value)
+    if tKSpeed in pressedKeys or tKSlow in pressedKeys:    
         ui.write(e.EV_KEY, key, 0)        
         ui.write(e.EV_KEY, key, value)            
     if isCtrl:        
@@ -379,35 +265,32 @@ with evdev.UInput.from_device(device) as ui:
                     ifGrabbed=True
                     device.set_led(evdev.ecodes.LED_CAPSL, 1)
                     continue
-            if (event.code, event.value)==(e.KEY_SCROLLLOCK,2):                
+            if (event.code, event.value)==(keyEmergencyExit,2):                
                 for thrd in dictThreadsMouseMove.values():
                     thrd[0].stop()
                 for thrd in dictThreadsArrowsMove.values():
                     thrd[0].stop()
                 break
-            if (event.code, event.value)==(58,1):
+            if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1):
                 ifGrabbed=False                
-                device.set_led(evdev.ecodes.LED_CAPSL, 0)
+                device.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
                 #os.system('setxkbmap -layout us')            
                 #os.system('setxkbmap -model evdev -layout us -option -option \'grp:switch\'')
-                os.system('setxkbmap us')
-                
+                os.system(firstLayoutString)                
                 continue
-            if (event.code, event.value)==(evdev.ecodes.KEY_LEFTMETA,1): #41 - `, 125 - LWin
+            if (event.code, event.value)==(keyDisableCCBKmodeSecondLayout,1): #41 - `, 125 - LWin
                 ifGrabbed=False
-                device.set_led(evdev.ecodes.LED_CAPSL, 0)
+                device.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
                 #os.system('setxkbmap -layout ru')
-                #строка с больши числом опций взята отсюда: http://www.linux.org.ru/forum/desktop/6841687
+                #string with long number of options is from here http://www.linux.org.ru/forum/desktop/6841687
                 #os.system('setxkbmap -model evdev -layout ru -option -option \'grp:switch\'')
                 #os.system('setxkbmap -layout ru -option \'grp:switch\'')
                 
                 #get by "setxkbmap -print"
-                os.system('setxkbmap ru+us:2')
+                os.system(secondLayoutString)
                 #continue
                 
-            if ifGrabbed:                        
-                #print(event.code==evdev.ecodes.KEY_LEFTMETA) 
-                #print(pressedKeys)
+            if ifGrabbed:
                 try:
                     if earlyPressedKeys[event.code]==1:
                         ui.write_event(event)
@@ -416,36 +299,37 @@ with evdev.UInput.from_device(device) as ui:
                 except Exception as err:
                     pass                     
     
-                if event.code==e.KEY_R:
+                if event.code==tKRight:
                     mouseArrowsMoveThreadsControlfunc(e.KEY_RIGHT,event.value,event)                        
-                elif event.code==e.KEY_E:
+                elif event.code==tKLeft:
                     mouseArrowsMoveThreadsControlfunc(e.KEY_LEFT,event.value,event)
-                elif event.code==e.KEY_O:
+                elif event.code==tKUp:
                     mouseArrowsMoveThreadsControlfunc(e.KEY_UP,event.value,event)
-                elif event.code==e.KEY_K:
+                elif event.code==tKDown:
                     mouseArrowsMoveThreadsControlfunc(e.KEY_DOWN,event.value,event)
-                elif event.code==e.KEY_T:                
+                elif event.code==tKhome:                
                     kbdArrows(e.KEY_HOME, event.value,event)
-                elif event.code==e.KEY_G:                
+                elif event.code==tKend:
                     kbdArrows(e.KEY_END, event.value,event)
-                elif event.code==e.KEY_X:
+                elif event.code==tKpgUp:
                     kbdArrows(e.KEY_PAGEUP, event.value,event)
-                elif event.code==e.KEY_C:
+                elif event.code==tKpgDown:
                     kbdArrows(e.KEY_PAGEDOWN, event.value,event)
-                elif event.code==e.KEY_F:
+                elif event.code==tMRight:
                     mouseMove(e.REL_X,1,event.value)
-                elif event.code==e.KEY_D:
+                elif event.code==tMLeft:
                     mouseMove(e.REL_X,-1,event.value)                
-                elif event.code==e.KEY_I:
+                elif event.code==tMUp:
                     mouseMove(e.REL_Y,-1,event.value)
-                elif event.code==e.KEY_J:
+                elif event.code==tMDown:
                     mouseMove(e.REL_Y,1,event.value)
-                elif event.code==e.KEY_H:
+                elif event.code==tMWhlDown:
                     mouseWheelMove(-1,event.value)
-                elif event.code==e.KEY_U:
+                elif event.code==tMWhlUp:
                     mouseWheelMove(1,event.value)
-                elif event.code==e.KEY_Z:    
-                    #eviacam
+                elif event.code==e.KEY_Z:
+                    #for eviacam (head tracking program)
+                    #TODO: unstable code
                     if event.value==1 or event.value==0:
                         ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,1)
                         ui.syn()                        
@@ -453,115 +337,86 @@ with evdev.UInput.from_device(device) as ui:
                         ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,0)
                         ui.syn()                        
                     #ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,event.value)
-                    ui.syn()
-                #elif event.code == e.KEY_RIGHTMETA:
-                 #   print('ololo')
-                elif (event.code, event.value)==(e.KEY_L,1):
-                    if e.KEY_V in pressedKeys:
+                    ui.syn()                
+                elif (event.code, event.value)==(tMLclk,1):
+                    if tKCtrlMouse in pressedKeys:
                         ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
                     uimouse.syn()                
-                elif (event.code, event.value)==(e.KEY_L,0):                    
+                elif (event.code, event.value)==(tMLclk,0):                    
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
-                    if e.KEY_V in pressedKeys:
+                    if tKCtrlMouse in pressedKeys:
                         ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 0)
                     uimouse.syn()
-                elif (event.code, event.value)==(e.KEY_M,1):
+                elif (event.code, event.value)==(tMRclk,1):
                     uimouse.write(e.EV_KEY , e.BTN_RIGHT, 1)
                     uimouse.write(e.EV_KEY , e.BTN_RIGHT, 0)
                     uimouse.syn()
-                elif event.code==e.KEY_Q:                    
+                elif event.code==tMMclk:
                     uimouse.write(e.EV_KEY , e.BTN_MIDDLE, event.value)
                     uimouse.syn()
-                elif (event.code, event.value)==(e.KEY_W,1):
+                elif (event.code, event.value)==(tMDLclk,1):
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
                     uimouse.write(e.EV_KEY , e.BTN_LEFT, 0)
                     uimouse.syn()
-                elif event.code==e.KEY_B:
-                    ui.write(e.EV_KEY , 127, event.value)
+                elif event.code==tAppsKey:
+                    ui.write(e.EV_KEY , 127, event.value) #context menu
                     ui.syn()
-                elif event.code==39:
+                elif event.code==tKSpeed:
                     #print('okl')
                     pass
-                elif event.code==e.KEY_V:
-                    #print('h')
-                    #if event.value==0:
-                        #ui.write_event(event)
-                        #ui.syn()
+                elif event.code==tKCtrlMouse:              
                     pass
-                elif event.code==e.KEY_S:
-                    #print('okl')
+                elif event.code==tKSlow:                    
                     pass
-                elif e.KEY_RIGHTALT in pressedKeys:
+                elif keyEnableCCBKmode in pressedKeys:
                     pass
-                elif event.code==e.KEY_A:
+                elif event.code==tKCtrl:
                     if (e.KEY_LEFTCTRL in pressedKeys or e.KEY_RIGHTCTRL in pressedKeys):
                         ui.write_event(event)
                         ui.syn()                
                 else:
-#==============================================================================
-#                     if event.value in (1,2):
-#                         earlyPressedKeys[event.code]=1
-#                         #print('fdof')
-#                         ui.write_event(event)
-#                     else:
-#                         try:
-#                             if earlyPressedKeys[event.code]==1:
-#                                 ui.write_event(event)
-#                                 earlyPressedKeys[event.code]=0
-#                                 #print('hell')
-#                         except Exception as err:
-#                             pass                    
-#==============================================================================
                     ui.write_event(event)
                     ui.syn()
             else:                
-                #ui.write_event(event)                
-                if event.code==evdev.ecodes.KEY_LEFTMETA:                    
+                if event.code==keyDisableCCBKmodeSecondLayout:
                     if event.value in [0,2]:
                         if event.value==2:
                             if isMeta==0:
-                                ui.write(e.EV_KEY, e.KEY_LEFTMETA, 1)
+                                ui.write(e.EV_KEY, keyDisableCCBKmodeSecondLayout, 1)
                                 ui.syn()
                                 isMeta=1
                         if event.value==0:
-                            isMeta=0
-                        #print('ofdof')
+                            isMeta=0                        
                         ui.write_event(event)
                         ui.syn()
                 elif event.value in (1,2):
-                    earlyPressedKeys[event.code]=1
-                    #print('fdof')
+                    earlyPressedKeys[event.code]=1                    
                     ui.write_event(event)
                 else:
                     try:
                         if earlyPressedKeys[event.code]==1:
                             ui.write_event(event)
-                            earlyPressedKeys[event.code]=0
-                            #print('hell')
+                            earlyPressedKeys[event.code]=0                            
                     except Exception as err:
-                        pass            
+                        pass
                 ui.syn()
         else:
-            if event.code == 58:
+            if event.code == keyDisableCCBKmodeFirstLayout:
                 pass
-                #print('ololo')
             else:
                 if event.value in (1,2):
                     earlyPressedKeys[event.code]=1
-                    #print('fdof')
                     ui.write_event(event)
                 else:
                     try:
                         if earlyPressedKeys[event.code]==1:
                             ui.write_event(event)
                             earlyPressedKeys[event.code]=0
-                            #print('hell')
                     except Exception as err:
-                        pass                
-                #ui.write_event(event)                
+                        pass
                 ui.syn() 
     device.ungrab()
         
