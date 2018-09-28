@@ -134,34 +134,32 @@ currentMouseSpeed_X=0
 currentMouseSpeed_Y=0
 
 def threadMouseMove(xy=e.REL_X,sgn=1):
+    sgnWithMult=scaleMultiplierMouse*sgn
     global currentMouseSpeed_X
     global currentMouseSpeed_Y
     while True:
         if (isKeyInPressedKeys(tKCtrl)):
             if not isKeyInPressedKeys(tKSpeed):
                 if isKeyInPressedKeys(tKSlow):
-                    uimouse.write(e.EV_REL, xy, 4*sgn)
+                    uimouse.write(e.EV_REL, xy, 2*sgnWithMult)
                 else:
                     if xy!=e.REL_X:
-                        currentMouseSpeed_Y+=1
-                        currentMouseSpeed=int(min(currentMouseSpeed_Y,10))
+                        currentMouseSpeed_Y+=2*scaleMultiplierMouse
+                        currentMouseSpeed=int(min(currentMouseSpeed_Y,20*scaleMultiplierMouse))
                     else:
-                        currentMouseSpeed_X+=1
-                        currentMouseSpeed=int(min(currentMouseSpeed_X,10))
+                        currentMouseSpeed_X+=2*scaleMultiplierMouse
+                        currentMouseSpeed=int(min(currentMouseSpeed_X,20*scaleMultiplierMouse))
                     uimouse.write(e.EV_REL, xy, currentMouseSpeed*sgn)            
             else:
-                uimouse.write(e.EV_REL, xy, 50*sgn)
+                uimouse.write(e.EV_REL, xy, 100*sgnWithMult)
         
         elif not isKeyInPressedKeys(tKSpeed):
             if isKeyInPressedKeys(tKSlow):
-                uimouse.write(e.EV_REL, xy, 1*sgn)
+                uimouse.write(e.EV_REL, xy, 5*sgnWithMult)
             else:
-                uimouse.write(e.EV_REL, xy, 20*sgn)
+                uimouse.write(e.EV_REL, xy, 20*sgnWithMult)
         else:
-            if not isKeyInPressedKeys(tKCtrl):
-                uimouse.write(e.EV_REL, xy, 100*sgn)    
-            else:
-                uimouse.write(e.EV_REL, xy, 50*sgn)    
+            uimouse.write(e.EV_REL, xy, 20*sgnWithMult)    
         uimouse.syn()
         time.sleep(MouseAccelerationTimerInterval*1e-3)
         if dictThreadsMouseMove[(xy,sgn)][0].stopped():
@@ -265,6 +263,7 @@ def serveKbd(device):
     global pressedKeys
     global ifGrabbed
     global isExit
+    global keyboadsDevs
     earlyPressedKeys={}
     isMeta=0
     #global ui
@@ -273,180 +272,224 @@ def serveKbd(device):
 
         ifGrabbed=False
         device.grab()
-        for event in device.read_loop():
-            #print(event)        
-            pressedKeys[device]=device.active_keys()
-            #if ifGrabbed:
-            if not ((isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)) or (isKeyInPressedKeys(e.KEY_LEFTALT) ) or (isKeyInPressedKeys(e.KEY_RIGHTMETA))) and not event.code in [e.KEY_LEFTCTRL,e.KEY_RIGHTCTRL,e.KEY_LEFTALT,e.KEY_RIGHTMETA]:#or e.KEY_RIGHTALT in pressedKeys
-                if not ifGrabbed:
-                    if (event.code, event.value)==(evdev.ecodes.KEY_RIGHTALT,1):
-                        ifGrabbed=True
+        try:
+            for event in device.read_loop():
+                #print(event)        
+                pressedKeys[device]=device.active_keys()
+                #if ifGrabbed:
+                if not ((isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)) or (isKeyInPressedKeys(e.KEY_LEFTALT) ) or (isKeyInPressedKeys(e.KEY_RIGHTMETA)) or (isKeyInPressedKeys(e.KEY_LEFTMETA))) and not event.code in [e.KEY_LEFTCTRL,e.KEY_RIGHTCTRL,e.KEY_LEFTALT,e.KEY_RIGHTMETA, e.KEY_LEFTMETA,e.KEY_LEFTSHIFT]:#or e.KEY_RIGHTALT in pressedKeys
+                    if not ifGrabbed:
+                        if (event.code, event.value)==(evdev.ecodes.KEY_RIGHTALT,1):
+                            ifGrabbed=True
+                            for dev in keyboadsDevs:
+                                dev.set_led(evdev.ecodes.LED_CAPSL, 1)
+                            continue
+                    if (event.code, event.value)==(keyEmergencyExit,2) or isExit:     
+                        isExit=True
+                        for thrd in dictThreadsMouseMove.values():
+                            thrd[0].stop()
+                        for thrd in dictThreadsArrowsMove.values():
+                            thrd[0].stop()
+                        break
+                    if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and (not isKeyInPressedKeys(e.KEY_LEFTSHIFT)):
+                        ifGrabbed=False                
                         for dev in keyboadsDevs:
-                            dev.set_led(evdev.ecodes.LED_CAPSL, 1)
+                            dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
+                        #os.system('setxkbmap -layout us')            
+                        #os.system('setxkbmap -model evdev -layout us -option -option \'grp:switch\'')
+                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
+                        ui.write(e.EV_KEY, e.KEY_2,1)
+                        ui.write(e.EV_KEY, e.KEY_2,0)
+                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
+                        os.system(firstLayoutString)                
                         continue
-                if (event.code, event.value)==(keyEmergencyExit,2) or isExit:     
-                    isExit=True
-                    for thrd in dictThreadsMouseMove.values():
-                        thrd[0].stop()
-                    for thrd in dictThreadsArrowsMove.values():
-                        thrd[0].stop()
-                    break
-                if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1):
-                    ifGrabbed=False                
-                    for dev in keyboadsDevs:
-                        dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
-                    #os.system('setxkbmap -layout us')            
-                    #os.system('setxkbmap -model evdev -layout us -option -option \'grp:switch\'')
-                    os.system(firstLayoutString)                
-                    continue
-                if (event.code, event.value)==(keyDisableCCBKmodeSecondLayout,1): #41 - `, 125 - LWin
-                    ifGrabbed=False
-                    for dev in keyboadsDevs:
-                        dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
-                    #os.system('setxkbmap -layout ru')
-                    #string with long number of options is from here http://www.linux.org.ru/forum/desktop/6841687
-                    #os.system('setxkbmap -model evdev -layout ru -option -option \'grp:switch\'')
-                    #os.system('setxkbmap -layout ru -option \'grp:switch\'')
-                    
-                    #get by "setxkbmap -print"
-                    os.system(secondLayoutString)
-                    #continue
-                    
-                if ifGrabbed:
-                    try:
-                        if earlyPressedKeys[event.code]==1:
-                            ui.write_event(event)
-                            ui.syn()
-                            earlyPressedKeys[event.code]=0                        
-                    except Exception as err:
-                        pass                     
-        
-                    if event.code==tKRight:
-                        mouseArrowsMoveThreadsControlfunc(e.KEY_RIGHT,event.value,event,ui)
-                    elif event.code==tKLeft:
-                        mouseArrowsMoveThreadsControlfunc(e.KEY_LEFT,event.value,event,ui)
-                    elif event.code==tKUp:
-                        mouseArrowsMoveThreadsControlfunc(e.KEY_UP,event.value,event,ui)
-                    elif event.code==tKDown:
-                        mouseArrowsMoveThreadsControlfunc(e.KEY_DOWN,event.value,event,ui)
-                    elif event.code==tKhome:                
-                        kbdArrows(e.KEY_HOME, event.value,event,ui)
-                    elif event.code==tKend:
-                        kbdArrows(e.KEY_END, event.value,event,ui)
-                    elif event.code==tKpgUp:
-                        kbdArrows(e.KEY_PAGEUP, event.value,event,ui)
-                    elif event.code==tKpgDown:
-                        kbdArrows(e.KEY_PAGEDOWN, event.value,event,ui)
-                    elif event.code==tMRight:
-                        mouseMove(e.REL_X,1,event.value)
-                    elif event.code==tMLeft:
-                        mouseMove(e.REL_X,-1,event.value)                
-                    elif event.code==tMUp:
-                        mouseMove(e.REL_Y,-1,event.value)
-                    elif event.code==tMDown:
-                        mouseMove(e.REL_Y,1,event.value)
-                    elif event.code==tMWhlDown:
-                        mouseWheelMove(ui,-1,event.value)
-                    elif event.code==tMWhlUp:
-                        mouseWheelMove(ui,1,event.value)
-                    elif event.code==e.KEY_Z:
-                        #for eviacam (head tracking program)
-                        #TODO: unstable code
-                        if event.value==1 or event.value==0:
-                            ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,1)
-                            ui.syn()                        
-                            time.sleep(0.15)
-                            ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,0)
-                            ui.syn()                        
-                        #ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,event.value)
-                        ui.syn()                
-                    elif (event.code, event.value)==(tMLclk,1):
-                        if tKCtrlMouse in pressedKeys:
-                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
-                        uimouse.syn()                
-                    elif (event.code, event.value)==(tMLclk,0):                    
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
-                        if tKCtrlMouse in pressedKeys:
-                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 0)
-                        uimouse.syn()
-                    elif (event.code, event.value)==(tMRclk,1):
-                        uimouse.write(e.EV_KEY , e.BTN_RIGHT, 1)
-                        uimouse.write(e.EV_KEY , e.BTN_RIGHT, 0)
-                        uimouse.syn()
-                    elif event.code==tMMclk:
-                        uimouse.write(e.EV_KEY , e.BTN_MIDDLE, event.value)
-                        uimouse.syn()
-                    elif (event.code, event.value)==(tMDLclk,1):
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
-                        uimouse.write(e.EV_KEY , e.BTN_LEFT, 0)
-                        uimouse.syn()
-                    elif event.code==tAppsKey:
-                        ui.write(e.EV_KEY , 127, event.value) #context menu
-                        ui.syn()
-                    elif event.code==tKSpeed:
-                        #print('okl')
-                        if event.value==1:
-                            os.system('xinput set-prop 10 272 0.2');
-                        elif event.value==0:
-                            os.system('xinput set-prop 10 272 1');
-                    elif event.code==tKCtrlMouse:              
-                        pass
-                    elif event.code==tKSlow:                    
-                        pass
-                    elif isKeyInPressedKeys(keyEnableCCBKmode):
-                        pass
-                    elif event.code==tKCtrl:
-                        if (isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)):
-                            ui.write_event(event)
+                    if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and isKeyInPressedKeys(e.KEY_LEFTSHIFT): #41 - `, 125 - LWin
+                        ifGrabbed=False
+                        for dev in keyboadsDevs:
+                            dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
+                        #os.system('setxkbmap -layout ru')
+                        #string with long number of options is from here http://www.linux.org.ru/forum/desktop/6841687
+                        #os.system('setxkbmap -model evdev -layout ru -option -option \'grp:switch\'')
+                        #os.system('setxkbmap -layout ru -option \'grp:switch\'')
+                        
+                        #get by "setxkbmap -print"
+                        ui.write(e.EV_KEY, e.KEY_LEFTSHIFT,0)
+                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
+                        ui.write(e.EV_KEY, e.KEY_3,1)
+                        ui.write(e.EV_KEY, e.KEY_3,0)
+                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
+                        os.system(secondLayoutString)                        
+                        continue
+                        
+                    if ifGrabbed:
+                        try:
+                            if earlyPressedKeys[event.code]==1:
+                                ui.write_event(event)
+                                ui.syn()
+                                earlyPressedKeys[event.code]=0                        
+                        except Exception as err:
+                            pass                     
+            
+                        if event.code==tKRight:
+                            mouseArrowsMoveThreadsControlfunc(e.KEY_RIGHT,event.value,event,ui)
+                        elif event.code==tKLeft:
+                            mouseArrowsMoveThreadsControlfunc(e.KEY_LEFT,event.value,event,ui)
+                        elif event.code==tKUp:
+                            mouseArrowsMoveThreadsControlfunc(e.KEY_UP,event.value,event,ui)
+                        elif event.code==tKDown:
+                            mouseArrowsMoveThreadsControlfunc(e.KEY_DOWN,event.value,event,ui)
+                        elif event.code==tKhome:                
+                            kbdArrows(e.KEY_HOME, event.value,event,ui)
+                        elif event.code==tKend:
+                            kbdArrows(e.KEY_END, event.value,event,ui)
+                        elif event.code==tKpgUp:
+                            kbdArrows(e.KEY_PAGEUP, event.value,event,ui)
+                        elif event.code==tKpgDown:
+                            kbdArrows(e.KEY_PAGEDOWN, event.value,event,ui)
+                        elif event.code==tMRight:
+                            mouseMove(e.REL_X,1,event.value)
+                        elif event.code==tMLeft:
+                            mouseMove(e.REL_X,-1,event.value)                
+                        elif event.code==tMUp:
+                            mouseMove(e.REL_Y,-1,event.value)
+                        elif event.code==tMDown:
+                            mouseMove(e.REL_Y,1,event.value)
+                        elif event.code==tMWhlDown:
+                            mouseWheelMove(ui,-1,event.value)
+                        elif event.code==tMWhlUp:
+                            mouseWheelMove(ui,1,event.value)
+                        elif event.code==e.KEY_Z:
+                            #for eviacam (head tracking program)
+                            #TODO: unstable code
+                            if event.value==1 or event.value==0:
+                                ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,1)
+                                ui.syn()                        
+                                time.sleep(0.15)
+                                ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,0)
+                                ui.syn()                        
+                            #ui.write(e.EV_KEY, e.KEY_SCROLLLOCK,event.value)
                             ui.syn()                
-                    else:
-                        ui.write_event(event)
-                        ui.syn()
-                else:                
-                    if event.code==keyDisableCCBKmodeSecondLayout:
-                        if event.value in [0,2]:
-                            if event.value==2:
-                                if isMeta==0:
-                                    ui.write(e.EV_KEY, keyDisableCCBKmodeSecondLayout, 1)
-                                    ui.syn()
-                                    isMeta=1
-                            if event.value==0:
-                                isMeta=0                        
+                        elif (event.code, event.value)==(tMLclk,1):
+                            if tKCtrlMouse in pressedKeys:
+                                ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 1)
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
+                            uimouse.syn()                
+                        elif (event.code, event.value)==(tMLclk,0):                    
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
+                            if tKCtrlMouse in pressedKeys:
+                                ui.write(e.EV_KEY, e.KEY_LEFTCTRL, 0)
+                            uimouse.syn()
+                        elif (event.code, event.value)==(tMRclk,1):
+                            uimouse.write(e.EV_KEY , e.BTN_RIGHT, 1)
+                            uimouse.write(e.EV_KEY , e.BTN_RIGHT, 0)
+                            uimouse.syn()
+                        elif event.code==tMMclk:
+                            uimouse.write(e.EV_KEY , e.BTN_MIDDLE, event.value)
+                            uimouse.syn()
+                        elif (event.code, event.value)==(tMDLclk,1):
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 0);
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 1)
+                            uimouse.write(e.EV_KEY , e.BTN_LEFT, 0)
+                            uimouse.syn()
+                        elif event.code==tAppsKey:
+                            ui.write(e.EV_KEY , 127, event.value) #context menu
+                            ui.syn()
+                        elif event.code==tKSpeed:
+                            #print('okl')
+                            if event.value==1:
+                                os.system('xinput set-prop 10 272 0.2');
+                            elif event.value==0:
+                                os.system('xinput set-prop 10 272 1');
+                        elif event.code==tKCtrlMouse:              
+                            pass
+                        elif event.code==tKSlow:                    
+                            pass
+                        elif isKeyInPressedKeys(keyEnableCCBKmode):
+                            pass
+                        elif event.code==tKCtrl:
+                            if (isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)):
+                                ui.write_event(event)
+                                ui.syn()                
+                        else:
                             ui.write_event(event)
                             ui.syn()
-                    elif event.value in (1,2):
-                        earlyPressedKeys[event.code]=1                    
-                        ui.write_event(event)
-                    else:
-                        try:
-                            if earlyPressedKeys[event.code]==1:
-                                ui.write_event(event)
-                                earlyPressedKeys[event.code]=0                            
-                        except Exception as err:
-                            pass
-                    ui.syn()
-            else:
-                if event.code == keyDisableCCBKmodeFirstLayout:
-                    pass
+                    else:                
+                        #if event.code==keyDisableCCBKmodeSecondLayout:
+                        #    if event.value in [0,2]:
+                        #        if event.value==2:
+                        #            if isMeta==0:
+                        #                ui.write(e.EV_KEY, keyDisableCCBKmodeSecondLayout, 1)
+                        #                ui.syn()
+                        #                isMeta=1
+                        #        if event.value==0:
+                        #            isMeta=0                        
+                        #        ui.write_event(event)
+                        #        ui.syn()
+                        #elif
+                        if event.value in (1,2):
+                            earlyPressedKeys[event.code]=1                    
+                            ui.write_event(event)
+                        else:
+                            try:
+                                if earlyPressedKeys[event.code]==1:
+                                    ui.write_event(event)
+                                    earlyPressedKeys[event.code]=0                            
+                            except Exception as err:
+                                pass
+                        ui.syn()
                 else:
-                    if event.value in (1,2):
-                        earlyPressedKeys[event.code]=1
-                        ui.write_event(event)
+                    if event.code == keyDisableCCBKmodeFirstLayout:
+                        pass
                     else:
-                        try:
-                            if earlyPressedKeys[event.code]==1:
-                                ui.write_event(event)
-                                earlyPressedKeys[event.code]=0
-                        except Exception as err:
-                            pass
-                    ui.syn() 
-        device.ungrab()
+                        if event.value in (1,2):
+                            earlyPressedKeys[event.code]=1
+                            ui.write_event(event)
+                        else:
+                            try:
+                                if earlyPressedKeys[event.code]==1:
+                                    ui.write_event(event)
+                                    earlyPressedKeys[event.code]=0
+                            except Exception as err:
+                                pass
+                        ui.syn() 
+        except Exception:
+            #exit if device is removed
+            keyboadsDevs.remove(device)
+            return
+            #device.ungrab()
+
+
  
 threadsServeKbd={}
 #with evdev.UInput.from_device(keyboadsDevs[0]) as ui:
 for dev in keyboadsDevs:
-    threadsServeKbd[dev]=StoppableThread(serveKbd, (dev,))  
-    threadsServeKbd[dev].start()
+    threadsServeKbd[str(dev)]=StoppableThread(serveKbd, (dev,))  
+    threadsServeKbd[str(dev)].start()
+
+import time
+
+while True:
+    time.sleep(5)
+    if isExit:
+        break
+    files=os.listdir(baseDir)
+    for file in range(len(files)):
+        if files[file].find('kbd')>=0:            
+            dev=evdev.InputDevice(baseDir+'/'+files[file])
+            if not dev in keyboadsDevs:
+                keyboadsDevs.append(dev)
+                threadsServeKbd[str(dev)]=StoppableThread(serveKbd, (dev,))  
+                threadsServeKbd[str(dev)].start()
+                print(str(dev)+' connected')
+            #import pdb
+            #pdb.set_trace()
+            
+            #if str(dev) in threadsServeKbd:# and not threadsServeKbd[str(dev)].isAlive():
+                #try:
+                #    dev.ungrab()
+                #except Exception:
+                #    pass
+                #threadsServeKbd[str(dev)]=StoppableThread(serveKbd, (dev,))  
+                #threadsServeKbd[str(dev)].start()
+

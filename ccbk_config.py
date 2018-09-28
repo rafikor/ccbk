@@ -60,6 +60,7 @@ secondLayoutString='setxkbmap ru+us:2' #russian layout
 #MouseAccelerationCycles=20
 #MouseAccelerationCyclesOld=MouseAccelerationCycles
 MouseAccelerationTimerInterval=15# ms
+scaleMultiplierMouse=1#to control mouse speed movements, must be int
 #MouseMaxSpeed=30
 #MouseMaxSpeedUsual=20
 #MouseMaxSpeedFast=20
