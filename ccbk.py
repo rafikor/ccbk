@@ -78,6 +78,7 @@ from select import select
 
 
 from evdev import UInput, AbsInfo
+from Xlib import display
 
 ###############################
 #capabilities to 'create virtual mouse'
@@ -107,6 +108,9 @@ from evdev import UInput, AbsInfo
 
 #from http://stackoverflow.com/questions/3503879/assign-output-of-os-system-to-a-variable-and-prevent-it-from-being-displayed-on
 import subprocess
+
+import keyboardAsTouchScreen
+dictKeysRelCoords=keyboardAsTouchScreen.loadRelativeKeysCoords('/home/baradaty-admin/work/ccbk/outparsed.txt')
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -138,7 +142,7 @@ def threadMouseMove(xy=e.REL_X,sgn=1):
     global currentMouseSpeed_X
     global currentMouseSpeed_Y
     while True:
-        if (isKeyInPressedKeys(tKCtrl)):
+        if (not isKeyInPressedKeys(tKCtrl)):
             if not isKeyInPressedKeys(tKSpeed):
                 if isKeyInPressedKeys(tKSlow):
                     uimouse.write(e.EV_REL, xy, 2*sgnWithMult)
@@ -266,7 +270,9 @@ def serveKbd(device):
     global keyboadsDevs
     earlyPressedKeys={}
     isMeta=0
-    #global ui
+    global isUseKeyboardAsTouchscreen
+    isUseKeyboardAsTouchscreen=False
+    #global uin
     with evdev.UInput.from_device(device) as ui:
     
 
@@ -276,8 +282,38 @@ def serveKbd(device):
             for event in device.read_loop():
                 #print(event)        
                 pressedKeys[device]=device.active_keys()
+                print((event.code, event.value))
+                if isUseKeyboardAsTouchscreen:                    
+                    print((event.code, event.value))                                        
+                    if event.value==0 or (event.code==4 and event.value>2):
+                        continue
+                    xScreenRes=2560#1370ui.syn()
+                    yScreenRes=1440#780                
+                    try:
+                        key=evdev.ecodes.KEY[event.code]
+                        print(key)
+                        [xCoord,yCoord]=keyboardAsTouchScreen.convertKeyToScreenCoords(key,dictKeysRelCoords,xScreenRes,yScreenRes)                        
+                        if [xCoord,yCoord]!=[-1,-1]:
+                            #print([xCoord,yCoord])                                                        
+                            qp = display.Display().screen().root.query_pointer()
+                            uimouse.write(evdev.ecodes.EV_REL, evdev.ecodes.REL_X, xCoord-qp.root_x)
+                            uimouse.write(evdev.ecodes.EV_REL, evdev.ecodes.REL_Y, yCoord-qp.root_y)
+                            uimouse.syn()
+                            ui.syn()
+                    except Exception as ef:
+                        print(ef)
+                        print("hard error")
+                    print('finish of using keyboard as touchscreen')                    
+                    isUseKeyboardAsTouchscreen=False                    
+                    continue
                 #if ifGrabbed:
-                if not ((isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)) or (isKeyInPressedKeys(e.KEY_LEFTALT) ) or (isKeyInPressedKeys(e.KEY_RIGHTMETA)) or (isKeyInPressedKeys(e.KEY_LEFTMETA))) and not event.code in [e.KEY_LEFTCTRL,e.KEY_RIGHTCTRL,e.KEY_LEFTALT,e.KEY_RIGHTMETA, e.KEY_LEFTMETA,e.KEY_LEFTSHIFT]:#or e.KEY_RIGHTALT in pressedKeys
+                if not ((isKeyInPressedKeys(e.KEY_LEFTCTRL) or isKeyInPressedKeys(e.KEY_RIGHTCTRL)) or (isKeyInPressedKeys(e.KEY_LEFTALT) ) or (isKeyInPressedKeys(e.KEY_RIGHTMETA)) ) and not event.code in [e.KEY_LEFTCTRL,e.KEY_RIGHTCTRL,e.KEY_LEFTALT,e.KEY_RIGHTMETA,e.KEY_RIGHTSHIFT]:#or e.KEY_RIGHTALT in pressedKeys
+#or (isKeyInPressedKeys(e.KEY_LEFTMETA))  e.KEY_LEFTMETA
+                    if False: #set to True in order to use keyboard as touchscreen
+                        if (event.code, event.value)==(evdev.ecodes.KEY_LEFTMETA,1):
+                            isUseKeyboardAsTouchscreen=True
+                            #ifGrabbed=False
+                            continue
                     if not ifGrabbed:
                         if (event.code, event.value)==(evdev.ecodes.KEY_RIGHTALT,1):
                             ifGrabbed=True
@@ -291,19 +327,20 @@ def serveKbd(device):
                         for thrd in dictThreadsArrowsMove.values():
                             thrd[0].stop()
                         break
-                    if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and (not isKeyInPressedKeys(e.KEY_LEFTSHIFT)):
+                    if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and (not isKeyInPressedKeys(e.KEY_RIGHTSHIFT)):
                         ifGrabbed=False                
                         for dev in keyboadsDevs:
                             dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
                         #os.system('setxkbmap -layout us')            
                         #os.system('setxkbmap -model evdev -layout us -option -option \'grp:switch\'')
-                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
-                        ui.write(e.EV_KEY, e.KEY_2,1)
-                        ui.write(e.EV_KEY, e.KEY_2,0)
-                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
+                        if False:                        
+                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
+                            ui.write(e.EV_KEY, e.KEY_2,1)
+                            ui.write(e.EV_KEY, e.KEY_2,0)
+                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
                         os.system(firstLayoutString)                
                         continue
-                    if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and isKeyInPressedKeys(e.KEY_LEFTSHIFT): #41 - `, 125 - LWin
+                    if (event.code, event.value)==(keyDisableCCBKmodeSecondLayout,1):#41 - `, 125 - LWin  and isKeyInPressedKeys(e.KEY_RIGHTSHIFT): 
                         ifGrabbed=False
                         for dev in keyboadsDevs:
                             dev.set_led(evdev.ecodes.LED_CAPSL, 0) # disable caps led
@@ -313,11 +350,12 @@ def serveKbd(device):
                         #os.system('setxkbmap -layout ru -option \'grp:switch\'')
                         
                         #get by "setxkbmap -print"
-                        ui.write(e.EV_KEY, e.KEY_LEFTSHIFT,0)
-                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
-                        ui.write(e.EV_KEY, e.KEY_3,1)
-                        ui.write(e.EV_KEY, e.KEY_3,0)
-                        ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
+                        ui.write(e.EV_KEY, e.KEY_RIGHTSHIFT,0)
+                        if False:
+                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL,1)
+                            ui.write(e.EV_KEY, e.KEY_3,1)
+                            ui.write(e.EV_KEY, e.KEY_3,0)
+                            ui.write(e.EV_KEY, e.KEY_LEFTCTRL,0)
                         os.system(secondLayoutString)                        
                         continue
                         
@@ -453,8 +491,10 @@ def serveKbd(device):
                             except Exception as err:
                                 pass
                         ui.syn() 
-        except Exception:
+        except Exception as ez:
             #exit if device is removed
+            print(ez)
+            device.ungrab()
             keyboadsDevs.remove(device)
             return
             #device.ungrab()
