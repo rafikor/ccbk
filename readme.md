@@ -15,49 +15,29 @@ Left win (super): deactivation of mouse pointer control by keyboard and activati
 caps lock: deactivation of mouse pointer control by keyboard and activation of english keyboard layout (en)
 Emergency exit (could be required only at Linux part): press ScrollLock for several seconds
 
-### When control of mouse is active:
+When control of mouse is active:
 -    mouse pointer:
-
---        l: left mouse button click
-
---        w: left mouse button click
-
---        m: right mouse button click
-
---        d/f: mouse pointer to right/left
-
---        i/j: mouse pointer to up/down
-
---       influence of the following buttons to mouse pointer movements (when hold):
-
----            ';' is for high acceleration
-
----            a is medium acceleration
-
----            s is medium slowdown
-
----            a+s is high slowdown
-
---        u/h: mouse wheel up/down
-
----            during ';' or s hold it will be accelerated
-
---        q: middle mouse button
-
-### Other keys:
--        Keys working together with modifiers shift and a (instead of ctrl, only windows):
-
---            arrows:
-
----                e,r: left/right
-
----                o,k: up/down
-
---            c,x: pageUp/pageDown
-
---            g,t: home/end
-
--        b: menu button
+  -        l: left mouse button click
+  -        w: left mouse button click
+  -        m: right mouse button click
+  -        d/f: mouse pointer to right/left
+  -        i/j: mouse pointer to up/down
+  -       influence of the following buttons to mouse pointer movements (when hold):
+    -            ';' is for high acceleration
+    -            a is medium acceleration
+    -            s is medium slowdown
+    -            a+s is high slowdown
+  -        u/h: mouse wheel up/down
+    -            during ';' or s hold it will be accelerated
+  -        q: middle mouse button
+- Other keys:
+  -        Keys working together with modifiers shift and a (instead of ctrl, only windows):
+    -            arrows:
+      -                e,r: left/right
+      -                o,k: up/down
+    -            c,x: pageUp/pageDown
+    -            g,t: home/end
+  -        b: menu button
     
 
 # Windows part
@@ -75,9 +55,10 @@ run: sudo python "./ccbk.py"
 
 Active ('ccbk') mode of script is indicated by light of Caps lock for used keyboard
 
-Currently emulated keyboard keys and mouse buttons:
 
- Sometimes script starts generate mouse movements, so, press any keys moving mouse, and it will be ok.
+Bugs:
+- Sometimes script starts generate mouse movements, so, press any keys moving mouse, and it will be ok.
+- 3 at upper part of keyboard may stick
 
 
             
