@@ -326,6 +326,7 @@ def serveKbd(device):
                             thrd[0].stop()
                         for thrd in dictThreadsArrowsMove.values():
                             thrd[0].stop()
+                        device.ungrab()
                         break
                     if (event.code, event.value)==(keyDisableCCBKmodeFirstLayout,1) and (not isKeyInPressedKeys(e.KEY_RIGHTSHIFT)):
                         ifGrabbed=False                
@@ -494,7 +495,7 @@ def serveKbd(device):
         except Exception as ez:
             #exit if device is removed
             print(ez)
-            device.ungrab()
+            #device.ungrab()
             keyboadsDevs.remove(device)
             return
             #device.ungrab()
