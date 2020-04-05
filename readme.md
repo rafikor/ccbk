@@ -1,74 +1,63 @@
+# Introduction
+I don't like to use mouse, so here are results of my search and work in order to control mouse (and keyboard keys placed far away like arrows) by central part of keyboard in iseful and convenient way (if you use 10-finger touch typing, you will never move your arms). I have continuously used programs presented here for approximately two years both at work and home (except for games and 3D software, of course). It is useful when one has mouse and very useful when mouse can't be used (e.g. in waiting hall). I can't say anything about influence of this way to work to progress of Carpal tunnel syndrome.
+
+There are two programs, one is for linux (python), the second is for windows (autohotkey script)
+Both parts work almost in the same way from user point of view (I have windows at work and linux at home), but implementations are totally different.
+
+
+The code is ugly, but working; refactor will be done in case of interest from other people.
+
+Inspired by https://lexikos.github.io/v2/docs/scripts/NumpadMouse.htm
+
+## User guide (for both linux and windows):
+Right alt: activation of mouse pointer control by keyboard
+Left win (super): deactivation of mouse pointer control by keyboard and activation of russian keyboard layout (ru)
+caps lock: deactivation of mouse pointer control by keyboard and activation of english keyboard layout (en)
+Emergency exit (could be required only at Linux part): press ScrollLock for several seconds
+
+When control of mouse is active:
+    mouse pointer:
+        l: left mouse button click
+        w: left mouse button click
+        m: right mouse button click
+        d/f: mouse pointer to right/left
+        i/j: mouse pointer to up/down
+        influence of the following buttons to mouse pointer movements (when hold):
+            ';' is for high acceleration
+            a is medium acceleration
+            s is medium slowdown
+            a+s is high slowdown
+        u/h: mouse wheel up/down
+            during ';' or s hold it will be accelerated
+        q: middle mouse button
+Other keys:
+        Keys working together with modifiers shift and a (instead of ctrl, only windows):
+            arrows:
+                e,r: left/right
+                o,k: up/down
+            c,x: pageUp/pageDown
+            g,t: home/end
+        b: menu button
+    
+
+# Windows part
+
+See file mouse_windows.ahk. (autohotkey script).
+This script is used as base (and the entire work is inspired by): "Using Keyboard NumPad as a Mouse -- by deguix" (https://lexikos.github.io/v2/docs/scripts/NumpadMouse.htm). Main differences are remapping of keys and addition of some other keys like arrows and PgDn/PgUp.
+
+# Linux part
+
+
 dependencies: evdev
+
 run: sudo python "./ccbk.py"
 
-If there are several keyboards, then it will be proposed to press any key on a keyboard which you want  to use with the script.
+
 Active ('ccbk') mode of script is indicated by light of Caps lock for used keyboard
 
 Currently emulated keyboard keys and mouse buttons:
 
- Sometimes script starts generate mouse movements, and this key is only useful option to stop script (script runs under root).
-
-up arrow
-down arrow
-lelt arrow
-right arrow
-
-mouse pointer up
-mouse pointer down
-mouse pointer left
-mouse pointer right
+ Sometimes script starts generate mouse movements, so, press any keys moving mouse, and it will be ok.
 
 
-ctrl+arows
-ctrl+left mouse click)
-tKSpeed=39  # speeds up mouse moves when pressed  (39 is ';' key). Also speeds up arow presses and mouse wheel buttons
-
-tMLclk=e.KEY_L   #left mouse click
-tMRclk=e.KEY_M     #right mouse click
-tMMclk=e.KEY_Q      #middle mouse click
-tMDLclk=e.KEY_W      #double left mouse click
-
-tMWhlUp=e.KEY_U   #mouse wheel up
-tMWhlDown=e.KEY_H    #mouse wheel down
-
-tKhome=e.KEY_T   #home
-tKend=e.KEY_G    #end
-tKpgUp=e.KEY_X    #page up
-tKpgDown=e.KEY_C   #page down
-tAppsKey=e.KEY_B   #context menu
-tMWhlLeft=e.KEY_Y   #mouse wheel left (currently not implemented)
-tMWhlRight=e.KEY_P   #mouse wheel right (currently not i
-
-правый alt - включение режима управления указателем мыши с клавиатуры
-левый win (super) - выключение режима управления указателем мыши с клавиатуры и активация русской раскладки (ru)
-    Длительное нажатие на левый win срабатывает как обычное (для возможности нажать win+w в Ubuntu)
-caps lock - выключение режима управления указателем мыши с клавиатуры и активация английской раскладки (en)
-Аварийный выход из программы - зажать клавишу ScrollLock на несколько секунд
-
-
-В активном режиме (управления указателем мыши с клавиатуры и др.):
-    указатель мыши:
-        l - щелчок левой клавишей мыши
-        w - двойной щелчок левой клавишей мыши
-        m - щелчок правой клавишей мыши
-        v+l - ctrl+щелчок мышью
-        d/f - вправо/влево
-        i/j - вверх/вниз
-        влияние следущих клавиш на перемещение указателя мыши (в зажатом состоянии):
-            ; - сильное ускорение
-            a - среднее ускорение
-            s - среднее замедление
-            a+s - сильное замедление
-        u/h - прокрутка колеса мыши вверх/вних
-            при зажатых ; либо s - ускоренная прокрутка
-        q - средняя кнопка мыши
-    Иные клавиши клавиатуры:
-        Клавиши, способные работать совместно с зажатыми shift и a (вместо ctrl):
-            Стрелки:
-                e,r - влево/вправо
-                o,k - вверх/вниз
-            c,x - pageUp/pageDown
-            g,t - home/end
-        b - клавиша меню
-    
             
