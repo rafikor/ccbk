@@ -15,29 +15,29 @@ Left win (super): deactivation of mouse pointer control by keyboard and activati
 caps lock: deactivation of mouse pointer control by keyboard and activation of english keyboard layout (en)
 Emergency exit (could be required only at Linux part): press ScrollLock for several seconds
 
-When control of mouse is active:
-    mouse pointer:
-        l: left mouse button click
-        w: left mouse button click
-        m: right mouse button click
-        d/f: mouse pointer to right/left
-        i/j: mouse pointer to up/down
-        influence of the following buttons to mouse pointer movements (when hold):
-            ';' is for high acceleration
-            a is medium acceleration
-            s is medium slowdown
-            a+s is high slowdown
-        u/h: mouse wheel up/down
-            during ';' or s hold it will be accelerated
-        q: middle mouse button
-Other keys:
-        Keys working together with modifiers shift and a (instead of ctrl, only windows):
-            arrows:
-                e,r: left/right
-                o,k: up/down
-            c,x: pageUp/pageDown
-            g,t: home/end
-        b: menu button
+### When control of mouse is active:
+-    mouse pointer:
+--        l: left mouse button click
+--        w: left mouse button click
+--        m: right mouse button click
+--        d/f: mouse pointer to right/left
+--        i/j: mouse pointer to up/down
+--       influence of the following buttons to mouse pointer movements (when hold):
+---            ';' is for high acceleration
+---            a is medium acceleration
+---            s is medium slowdown
+---            a+s is high slowdown
+--        u/h: mouse wheel up/down
+---            during ';' or s hold it will be accelerated
+--        q: middle mouse button
+### Other keys:
+-        Keys working together with modifiers shift and a (instead of ctrl, only windows):
+--            arrows:
+---                e,r: left/right
+---                o,k: up/down
+--            c,x: pageUp/pageDown
+--            g,t: home/end
+-        b: menu button
     
 
 # Windows part
