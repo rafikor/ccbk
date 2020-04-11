@@ -109,8 +109,8 @@ from Xlib import display
 #from http://stackoverflow.com/questions/3503879/assign-output-of-os-system-to-a-variable-and-prevent-it-from-being-displayed-on
 import subprocess
 
-import keyboardAsTouchScreen
-dictKeysRelCoords=keyboardAsTouchScreen.loadRelativeKeysCoords('/home/baradaty-admin/work/ccbk/outparsed.txt')
+#import keyboardAsTouchScreen
+#dictKeysRelCoords=keyboardAsTouchScreen.loadRelativeKeysCoords('/home/baradaty-admin/work/ccbk/outparsed.txt')
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -283,7 +283,7 @@ def serveKbd(device):
                 #print(event)        
                 pressedKeys[device]=device.active_keys()
                 print((event.code, event.value))
-                if isUseKeyboardAsTouchscreen:                    
+                if isUseKeyboardAsTouchscreen and False:
                     print((event.code, event.value))                                        
                     if event.value==0 or (event.code==4 and event.value>2):
                         continue
